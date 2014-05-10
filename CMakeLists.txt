@@ -79,3 +79,5 @@ ENDIF()
 INCLUDE(cmake/TrenchBroomApp.cmake)
 INCLUDE(cmake/TrenchBroomTest.cmake)
 
+INCLUDE(cmake/cotire.cmake)
+cotire(common TrenchBroom TrenchBroom-Test)
