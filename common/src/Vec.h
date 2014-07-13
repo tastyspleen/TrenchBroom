@@ -833,6 +833,11 @@ typename Vec<T,S>::List operator*(const T left, const typename Vec<T,S>::List& r
 }
 
 template <typename T>
+T wedge(const Vec<T,2>& left, const Vec<T,2>& right) {
+    return left.x() * right.y() - left.y() * right.x();
+}
+
+template <typename T>
 Vec<T,3>& cross(Vec<T,3>& left, const Vec<T,3>& right) {
     return left = crossed(left, right);
 }
@@ -857,6 +862,16 @@ T angleBetween(const Vec<T,3> vec, const Vec<T,3>& axis, const Vec<T,3>& up) {
     if (cross.dot(up) >= static_cast<T>(0.0))
         return std::acos(cos);
     return Math::Constants<T>::twoPi() - std::acos(cos);
+}
+
+template <typename T>
+T angleBetween(const Vec<T,2> vec, const Vec<T,2>& axis) {
+    // computes the CCW angle between axis and vector
+    // all vectors are expected to be normalized
+    // we must invert the sign of the result because atan2 computes the CW angle
+    const T y = wedge(vec, axis);
+    const T x = vec.dot(axis);
+    return -std::atan2(y, x);
 }
 
 template <typename T, size_t S>

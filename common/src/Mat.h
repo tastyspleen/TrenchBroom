@@ -621,15 +621,15 @@ const Mat<T,4,4> rotationMatrix4(const Quat<T>& quat) {
 }
 
 template <typename T, size_t S>
-const Mat<T,S+1,S+1> scalingMatrix4(const Vec<T,S>& factors) {
-    Mat<T,S+1,S+1> scaling;
+const Mat<T,S,S> scalingMatrix(const Vec<T,S>& factors) {
+    Mat<T,S,S> scaling;
     for (size_t i = 0; i < S; ++i)
         scaling[i][i] = factors[i];
     return scaling;
 }
 
 template <size_t S, typename T>
-const Mat<T,S,S> scalingMatrix4(const T f) {
+const Mat<T,S,S> scalingMatrix(const T f) {
     Mat<T,S,S> scaling;
     for (size_t i = 0; i < S-1; ++i)
         scaling[i][i] = f;

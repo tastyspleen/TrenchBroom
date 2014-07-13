@@ -445,7 +445,7 @@ namespace TrenchBroom {
             const Vec3f center = definition->bounds().center();
             
             return (translationMatrix(offset) *
-                    scalingMatrix4<4>(scaling) *
+                    scalingMatrix<4>(scaling) *
                     translationMatrix(rotationOffset) *
                     translationMatrix(center) *
                     rotationMatrix4(m_rotation) *

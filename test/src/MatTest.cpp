@@ -837,8 +837,8 @@ TEST(MatTest, translationMatrix) {
 }
 
 TEST(MatTest, scalingMatrix4) {
-    const Vec3d v(2.0, 3.0, 4.0);
-    const Mat4x4d t = scalingMatrix4(v);
+    const Vec4d v(2.0, 3.0, 4.0, 1.0);
+    const Mat4x4d t = scalingMatrix(v);
     
     for (size_t c = 0; c < 4; ++c) {
         for (size_t r = 0; r < 4; ++r) {

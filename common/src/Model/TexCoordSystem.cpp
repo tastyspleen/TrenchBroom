@@ -38,6 +38,10 @@ namespace TrenchBroom {
             return getYAxis();
         }
 
+        Vec3 TexCoordSystem::zAxis() const {
+            return getZAxis();
+        }
+
         Vec2f TexCoordSystem::getTexCoords(const Vec3& point, const BrushFaceAttribs& attribs) const {
             return doGetTexCoords(point, attribs);
         }
@@ -50,8 +54,8 @@ namespace TrenchBroom {
             doTransform(oldBoundary, transformation, attribs, lockTexture);
         }
 
-        void TexCoordSystem::transform(const Plane3& boundary, const Mat3x3& transformation, BrushFaceAttribs& attribs) {
-            doTransform(boundary, transformation, attribs);
+        void TexCoordSystem::transform(const Plane3& boundary, const Mat2x2& transformation, BrushFaceAttribs& attribs, const Vec3& invariant) {
+            doTransform(boundary, transformation, attribs, invariant);
         }
 
         void TexCoordSystem::moveTexture(const Vec3& normal, const Vec3& up, const Vec3& right, const Vec2f& offset, BrushFaceAttribs& attribs) const {

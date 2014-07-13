@@ -93,7 +93,7 @@ namespace TrenchBroom {
             attribs.setOffset(newOffset);
         }
 
-        void ParallelTexCoordSystem::doTransform(const Plane3& boundary, const Mat3x3& transformation, BrushFaceAttribs& attribs) {
+        void ParallelTexCoordSystem::doTransform(const Plane3& boundary, const Mat2x2& transformation, BrushFaceAttribs& attribs, const Vec3& invariant) {
         }
 
         float ParallelTexCoordSystem::doMeasureAngle(const float currentAngle, const Vec2f& center, const Vec2f& point) const {

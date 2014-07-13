@@ -39,12 +39,13 @@ namespace TrenchBroom {
             
             Vec3 xAxis() const;
             Vec3 yAxis() const;
+            Vec3 zAxis() const;
             
             Vec2f getTexCoords(const Vec3& point, const BrushFaceAttribs& attribs) const;
             
             void setRotation(const Vec3& normal, float oldAngle, float newAngle);
             void transform(const Plane3& oldBoundary, const Mat4x4& transformation, BrushFaceAttribs& attribs, bool lockTexture);
-            void transform(const Plane3& boundary, const Mat3x3& transformation, BrushFaceAttribs& attribs);
+            void transform(const Plane3& boundary, const Mat2x2& transformation, BrushFaceAttribs& attribs, const Vec3& invariant = Vec3::Null);
             
             void moveTexture(const Vec3& normal, const Vec3& up, const Vec3& right, const Vec2f& offset, BrushFaceAttribs& attribs) const;
             void rotateTexture(const Vec3& normal, float angle, BrushFaceAttribs& attribs) const;
@@ -64,7 +65,7 @@ namespace TrenchBroom {
             
             virtual void doSetRotation(const Vec3& normal, float oldAngle, float newAngle) = 0;
             virtual void doTransform(const Plane3& oldBoundary, const Mat4x4& transformation, BrushFaceAttribs& attribs, bool lockTexture) = 0;
-            virtual void doTransform(const Plane3& boundary, const Mat3x3& transformation, BrushFaceAttribs& attribs) = 0;
+            virtual void doTransform(const Plane3& boundary, const Mat2x2& transformation, BrushFaceAttribs& attribs, const Vec3& invariant) = 0;
             
             virtual float doMeasureAngle(float currentAngle, const Vec2f& center, const Vec2f& point) const = 0;
         protected:
