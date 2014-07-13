@@ -153,7 +153,7 @@ namespace TrenchBroom {
 
         const String BrushFace::NoTextureName = "__TB_empty";
         
-        BrushFace::BrushFace(const Vec3& point0, const Vec3& point1, const Vec3& point2, const String& textureName, TexCoordSystem* texCoordSystem) :
+        BrushFace::BrushFace(const Vec3& point1, const Vec3& point2, const Vec3& point3, const String& textureName, TexCoordSystem* texCoordSystem) :
         m_parent(NULL),
         m_lineNumber(0),
         m_lineCount(0),
@@ -163,15 +163,15 @@ namespace TrenchBroom {
         m_vertexCacheValid(false),
         m_attribs(textureName) {
             assert(m_texCoordSystem != NULL);
-            setPoints(point0, point1, point2);
+            setPoints(point1, point2, point3);
         }
 
-        BrushFace* BrushFace::createParaxial(const Vec3& point0, const Vec3& point1, const Vec3& point2, const String& textureName) {
-            return new BrushFace(point0, point1, point2, textureName, new ParaxialTexCoordSystem(point0, point1, point2));
+        BrushFace* BrushFace::createParaxial(const Vec3& point1, const Vec3& point2, const Vec3& point3, const String& textureName) {
+            return new BrushFace(point1, point2, point3, textureName, new ParaxialTexCoordSystem(point1, point2, point3));
         }
         
-        BrushFace* BrushFace::createParallel(const Vec3& point0, const Vec3& point1, const Vec3& point2, const String& textureName) {
-            return new BrushFace(point0, point1, point2, textureName, new ParallelTexCoordSystem(point0, point1, point2));
+        BrushFace* BrushFace::createParallel(const Vec3& point1, const Vec3& point2, const Vec3& point3, const String& textureName) {
+            return new BrushFace(point1, point2, point3, textureName, new ParallelTexCoordSystem(point1, point2, point3));
         }
 
         BrushFace::~BrushFace() {
@@ -232,7 +232,7 @@ namespace TrenchBroom {
         Vec3 BrushFace::boundsCenter() const {
             assert(m_side != NULL);
             
-            const Mat4x4 toPlane = planeProjectionMatrix(m_boundary.distance, m_boundary.normal);
+            const Mat4x4 toPlane = planeProjectionMatrix4(m_boundary.distance, m_boundary.normal);
             const Mat4x4 fromPlane = invertedMatrix(toPlane);
             
             BBox3 bounds;
@@ -475,7 +475,7 @@ namespace TrenchBroom {
 
         Mat4x4 BrushFace::projectToBoundaryMatrix() const {
             const Vec3 texZAxis = m_texCoordSystem->fromMatrix(Vec2f::Null, Vec2f::One) * Vec3::PosZ;
-            const Mat4x4 worldToPlaneMatrix = planeProjectionMatrix(m_boundary.distance, m_boundary.normal, texZAxis);
+            const Mat4x4 worldToPlaneMatrix = planeProjectionMatrix4(m_boundary.distance, m_boundary.normal, texZAxis);
             const Mat4x4 planeToWorldMatrix = invertedMatrix(worldToPlaneMatrix);
             return planeToWorldMatrix * Mat4x4::ZerZ * worldToPlaneMatrix;
         }
@@ -626,10 +626,10 @@ namespace TrenchBroom {
             return dist;
         }
         
-        void BrushFace::setPoints(const Vec3& point0, const Vec3& point1, const Vec3& point2) {
-            m_points[0] = point0;
-            m_points[1] = point1;
-            m_points[2] = point2;
+        void BrushFace::setPoints(const Vec3& point1, const Vec3& point2, const Vec3& point3) {
+            m_points[0] = point1;
+            m_points[1] = point2;
+            m_points[2] = point3;
             correctPoints();
             
             if (!setPlanePoints(m_boundary, m_points)) {

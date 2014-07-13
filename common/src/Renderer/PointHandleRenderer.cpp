@@ -102,7 +102,7 @@ namespace TrenchBroom {
             const Camera& camera = renderContext.camera();
             const Mat4x4f billboardMatrix = camera.orthogonalBillboardMatrix();
             const float factor = camera.distanceTo(position) * scaling;
-            const Mat4x4f matrix = translationMatrix(position) * billboardMatrix * scalingMatrix(Vec3f(factor, factor, 0.0f));
+            const Mat4x4f matrix = translationMatrix(position) * billboardMatrix * scalingMatrix4(Vec3f(factor, factor, 0.0f));
             MultiplyModelMatrix billboard(renderContext.transformation(), matrix);
 
             SetVboState activateVbo(m_vbo);

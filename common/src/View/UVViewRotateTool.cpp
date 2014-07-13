@@ -55,7 +55,7 @@ namespace TrenchBroom {
             const Mat4x4 fromFace = face->fromTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true);
 
             const Plane3& boundary = face->boundary();
-            const Mat4x4 toPlane = planeProjectionMatrix(boundary.distance, boundary.normal);
+            const Mat4x4 toPlane = planeProjectionMatrix4(boundary.distance, boundary.normal);
 
             const Ray3& pickRay = inputState.pickRay();
             const FloatType distance = pickRay.intersectWithPlane(boundary.normal, boundary.anchor());
@@ -195,7 +195,7 @@ namespace TrenchBroom {
             const Mat4x4 fromFace = face->fromTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, false);
 
             const Plane3& boundary = face->boundary();
-            const Mat4x4 toPlane = planeProjectionMatrix(boundary.distance, boundary.normal);
+            const Mat4x4 toPlane = planeProjectionMatrix4(boundary.distance, boundary.normal);
             const Mat4x4 fromPlane = invertedMatrix(toPlane);
             
             

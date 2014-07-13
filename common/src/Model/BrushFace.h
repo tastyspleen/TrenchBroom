@@ -102,10 +102,7 @@ namespace TrenchBroom {
              *
              * 1
              * |
-             * |
-             * |
-             * |
-             * 0-----------2
+             * 0--2
              */
             typedef Vec3 Points[3];
             
@@ -128,10 +125,10 @@ namespace TrenchBroom {
         protected:
             BrushFaceAttribs m_attribs;
         public:
-            BrushFace(const Vec3& point0, const Vec3& point1, const Vec3& point2, const String& textureName, TexCoordSystem* texCoordSystem);
+            BrushFace(const Vec3& point1, const Vec3& point2, const Vec3& point3, const String& textureName, TexCoordSystem* texCoordSystem);
             
-            static BrushFace* createParaxial(const Vec3& point0, const Vec3& point1, const Vec3& point2, const String& textureName = "");
-            static BrushFace* createParallel(const Vec3& point0, const Vec3& point1, const Vec3& point2, const String& textureName = "");
+            static BrushFace* createParaxial(const Vec3& point1, const Vec3& point2, const Vec3& point3, const String& textureName = "");
+            static BrushFace* createParallel(const Vec3& point1, const Vec3& point2, const Vec3& point3, const String& textureName = "");
             
             virtual ~BrushFace();
             
@@ -180,6 +177,7 @@ namespace TrenchBroom {
             
             void moveTexture(const Vec3& up, const Vec3& right, const Vec2f& offset);
             void rotateTexture(float angle);
+            void transformTexture(const Mat2x2& transform);
             
             void transform(const Mat4x4& transform, const bool lockTexture);
             void invert();
@@ -212,7 +210,7 @@ namespace TrenchBroom {
             
             void invalidate();
         private:
-            void setPoints(const Vec3& point0, const Vec3& point1, const Vec3& point2);
+            void setPoints(const Vec3& point1, const Vec3& point2, const Vec3& point3);
             void correctPoints();
             void validateVertexCache() const;
             void invalidateVertexCache();

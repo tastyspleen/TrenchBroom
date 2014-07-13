@@ -50,11 +50,15 @@ namespace TrenchBroom {
             doTransform(oldBoundary, transformation, attribs, lockTexture);
         }
 
+        void TexCoordSystem::transform(const Plane3& boundary, const Mat3x3& transformation, BrushFaceAttribs& attribs) {
+            doTransform(boundary, transformation, attribs);
+        }
+
         void TexCoordSystem::moveTexture(const Vec3& normal, const Vec3& up, const Vec3& right, const Vec2f& offset, BrushFaceAttribs& attribs) const {
             
             /*
             const Vec3 direction  = crossed(up, right);
-            const Mat4x4 toPlane  = Mat4x4::ZerZ * planeProjectionMatrix(0.0, direction);
+            const Mat4x4 toPlane  = Mat4x4::ZerZ * planeProjectionMatrix4(0.0, direction);
             const Vec3 upPlane    = (toPlane * up).normalized();
             const Vec3 rightPlane = (toPlane * right).normalized();
             const Vec3 xPlane     = (toPlane * xAxis()).normalized();
@@ -91,7 +95,7 @@ namespace TrenchBroom {
             actualOffset[vIndex] = vFactor * offset.y();
              */
 
-            const Mat4x4 toPlane = planeProjectionMatrix(0.0, normal);
+            const Mat4x4 toPlane = planeProjectionMatrix4(0.0, normal);
             const Mat4x4 fromPlane = invertedMatrix(toPlane);
             const Mat4x4 transform = fromPlane * Mat4x4::ZerZ * toPlane;
             const Vec3 texX = (transform * getXAxis()).normalized();

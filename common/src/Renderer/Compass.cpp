@@ -65,7 +65,7 @@ namespace TrenchBroom {
             const Mat4x4f view = viewMatrix(Vec3f::PosY, Vec3f::PosZ) * translationMatrix(500.0f * Vec3f::PosY);
             const ReplaceTransformation ortho(renderContext.transformation(), projection, view);
             
-            const Mat4x4f compassTransformation = translationMatrix(Vec3f(-viewWidth / 2.0f + 55.0f, 0.0f, -viewHeight / 2.0f + 55.0f)) * scalingMatrix<4>(2.0f);
+            const Mat4x4f compassTransformation = translationMatrix(Vec3f(-viewWidth / 2.0f + 55.0f, 0.0f, -viewHeight / 2.0f + 55.0f)) * scalingMatrix4<4>(2.0f);
             const MultiplyModelMatrix compass(renderContext.transformation(), compassTransformation);
             
             PreferenceManager& prefs = PreferenceManager::instance();

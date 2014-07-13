@@ -187,7 +187,7 @@ namespace TrenchBroom {
                 BBox3f rotatedBounds;
                 if (model != NULL) {
                     const Vec3f center = model->bounds(spec.skinIndex, spec.frameIndex).center();
-                    const Mat4x4f transformation = translationMatrix(center) * rotationMatrix(m_rotation) * translationMatrix(-center);
+                    const Mat4x4f transformation = translationMatrix(center) * rotationMatrix4(m_rotation) * translationMatrix(-center);
                     rotatedBounds = model->transformedBounds(spec.skinIndex, spec.frameIndex, transformation);
                     modelRenderer = m_entityModelManager.renderer(spec);
                 } else {
@@ -445,10 +445,10 @@ namespace TrenchBroom {
             const Vec3f center = definition->bounds().center();
             
             return (translationMatrix(offset) *
-                    scalingMatrix<4>(scaling) *
+                    scalingMatrix4<4>(scaling) *
                     translationMatrix(rotationOffset) *
                     translationMatrix(center) *
-                    rotationMatrix(m_rotation) *
+                    rotationMatrix4(m_rotation) *
                     translationMatrix(-center));
         }
         

@@ -127,7 +127,7 @@ namespace TrenchBroom {
                 
                 const Vec3f position = entity->origin();
                 const Quatf rotation = entity->rotation();
-                const Mat4x4f matrix = translationMatrix(position) * rotationMatrix(rotation);
+                const Mat4x4f matrix = translationMatrix(position) * rotationMatrix4(rotation);
                 MultiplyModelMatrix multMatrix(context.transformation(), matrix);
 
                 renderer->render();

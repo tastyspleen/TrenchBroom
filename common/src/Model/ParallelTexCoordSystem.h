@@ -33,7 +33,7 @@ namespace TrenchBroom {
             Vec3 m_xAxis;
             Vec3 m_yAxis;
         public:
-            ParallelTexCoordSystem(const Vec3& xAxis, const Vec3& yAxis, const Vec3& normal, float rotation);
+            ParallelTexCoordSystem(const Vec3& xAxis, const Vec3& yAxis);
             ParallelTexCoordSystem(const Vec3& point0, const Vec3& point1, const Vec3& point2);
         private:
             TexCoordSystem* doClone() const;
@@ -47,6 +47,7 @@ namespace TrenchBroom {
             
             void doSetRotation(const Vec3& normal, float oldAngle, float newAngle);
             void doTransform(const Plane3& oldBoundary, const Mat4x4& transformation, BrushFaceAttribs& attribs, bool lockTexture);
+            void doTransform(const Plane3& boundary, const Mat3x3& transformation, BrushFaceAttribs& attribs);
 
             float doMeasureAngle(float currentAngle, const Vec2f& center, const Vec2f& point) const;
             void computeInitialAxes(const Vec3& normal, Vec3& xAxis, Vec3& yAxis) const;

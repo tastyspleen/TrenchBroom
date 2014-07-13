@@ -33,8 +33,8 @@ namespace TrenchBroom {
             Vec3( 0.0, -1.0,  0.0), Vec3( 1.0,  0.0,  0.0), Vec3( 0.0,  0.0, -1.0),
         };
 
-        ParaxialTexCoordSystem::ParaxialTexCoordSystem(const Vec3& point0, const Vec3& point1, const Vec3& point2) {
-            const Vec3 normal = crossed(point2 - point0, point1 - point0).normalized();
+        ParaxialTexCoordSystem::ParaxialTexCoordSystem(const Vec3& point1, const Vec3& point2, const Vec3& point3) {
+            const Vec3 normal = crossed(point3 - point1, point2 - point1).normalized();
             setRotation(normal, 0.0f, 0.0f);
         }
 
@@ -121,7 +121,7 @@ namespace TrenchBroom {
             const Vec3 offset = transformation * Vec3::Null;
             const Vec3 newAnchor = transformation * oldAnchor;
             
-            const Mat4x4 toBoundary        = planeProjectionMatrix(0.0, oldNormal, crossed(m_xAxis, m_yAxis).normalized());
+            const Mat4x4 toBoundary        = planeProjectionMatrix4(0.0, oldNormal, crossed(m_xAxis, m_yAxis).normalized());
             const Mat4x4 fromBoundary      = invertedMatrix(toBoundary);
             const Mat4x4 projectToBoundary = fromBoundary * Mat4x4::ZerZ * toBoundary;
             
@@ -141,7 +141,7 @@ namespace TrenchBroom {
             axes(newIndex, newBaseXAxis, newBaseYAxis, newProjectionAxis);
             
             // project the transformed texture axes onto the new texture projection plane
-            const Mat4x4 toTexPlane        = planeProjectionMatrix(0.0, newProjectionAxis);
+            const Mat4x4 toTexPlane        = planeProjectionMatrix4(0.0, newProjectionAxis);
             const Mat4x4 fromTexPlane      = invertedMatrix(toTexPlane);
             const Mat4x4 projectToTexPlane = fromTexPlane * Mat4x4::ZerZ * toTexPlane;
             Vec3 newXAxis = projectToTexPlane * newXAxisOnBoundary;
@@ -206,6 +206,12 @@ namespace TrenchBroom {
             attribs.setOffset(newOffset);
             attribs.setScale(newScale);
             attribs.setRotation(newRotation);
+        }
+
+        void ParaxialTexCoordSystem::doTransform(const Plane3& boundary, const Mat3x3& transform2, BrushFaceAttribs& attribs) {
+            const Mat4x4 transform4 = Mat4x4::embed(transform2);
+            const Vec3 newX = transform4 * m_xAxis;
+            const Vec3 newY = transform4 * m_yAxis;
         }
 
         float ParaxialTexCoordSystem::doMeasureAngle(const float currentAngle, const Vec2f& center, const Vec2f& point) const {

@@ -803,16 +803,16 @@ TEST(MatTest, invertedMatrix) {
     ASSERT_TRUE(invertible);
 }
 
-TEST(MatTest, rotationMatrixWithAngleAndAxis) {
-    ASSERT_MAT_EQ(Mat4x4d::Rot90XCCW, rotationMatrix(Vec3d::PosX, Math::radians(90.0)));
-    ASSERT_MAT_EQ(Mat4x4d::Rot90YCCW, rotationMatrix(Vec3d::PosY, Math::radians(90.0)));
-    ASSERT_MAT_EQ(Mat4x4d::Rot90ZCCW, rotationMatrix(Vec3d::PosZ, Math::radians(90.0)));
+TEST(MatTest, rotationMatrix4WithAngleAndAxis) {
+    ASSERT_MAT_EQ(Mat4x4d::Rot90XCCW, rotationMatrix4(Vec3d::PosX, Math::radians(90.0)));
+    ASSERT_MAT_EQ(Mat4x4d::Rot90YCCW, rotationMatrix4(Vec3d::PosY, Math::radians(90.0)));
+    ASSERT_MAT_EQ(Mat4x4d::Rot90ZCCW, rotationMatrix4(Vec3d::PosZ, Math::radians(90.0)));
 }
 
-TEST(MatTest, rotationMatrixWithQuaternion) {
-    ASSERT_MAT_EQ(Mat4x4d::Rot90XCCW, rotationMatrix(Quatd(Vec3d::PosX, Math::radians(90.0))));
-    ASSERT_MAT_EQ(Mat4x4d::Rot90YCCW, rotationMatrix(Quatd(Vec3d::PosY, Math::radians(90.0))));
-    ASSERT_MAT_EQ(Mat4x4d::Rot90ZCCW, rotationMatrix(Quatd(Vec3d::PosZ, Math::radians(90.0))));
+TEST(MatTest, rotationMatrix4WithQuaternion) {
+    ASSERT_MAT_EQ(Mat4x4d::Rot90XCCW, rotationMatrix4(Quatd(Vec3d::PosX, Math::radians(90.0))));
+    ASSERT_MAT_EQ(Mat4x4d::Rot90YCCW, rotationMatrix4(Quatd(Vec3d::PosY, Math::radians(90.0))));
+    ASSERT_MAT_EQ(Mat4x4d::Rot90ZCCW, rotationMatrix4(Quatd(Vec3d::PosZ, Math::radians(90.0))));
 
     
     std::srand(static_cast<unsigned int>(std::time(NULL)));
@@ -822,7 +822,7 @@ TEST(MatTest, rotationMatrixWithQuaternion) {
             axis[j] = (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX));
         axis.normalize();
         const double angle = (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX))*2.0*Math::Cd::pi();
-        ASSERT_MAT_EQ(rotationMatrix(axis, angle), rotationMatrix(Quatd(axis, angle)));
+        ASSERT_MAT_EQ(rotationMatrix4(axis, angle), rotationMatrix4(Quatd(axis, angle)));
     }
 }
 
@@ -836,9 +836,9 @@ TEST(MatTest, translationMatrix) {
     ASSERT_VEC_EQ(t[3], Vec4d(v, 1.0));
 }
 
-TEST(MatTest, scalingMatrix) {
+TEST(MatTest, scalingMatrix4) {
     const Vec3d v(2.0, 3.0, 4.0);
-    const Mat4x4d t = scalingMatrix(v);
+    const Mat4x4d t = scalingMatrix4(v);
     
     for (size_t c = 0; c < 4; ++c) {
         for (size_t r = 0; r < 4; ++r) {

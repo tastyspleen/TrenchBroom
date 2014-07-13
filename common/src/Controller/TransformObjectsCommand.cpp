@@ -35,12 +35,12 @@ namespace TrenchBroom {
         }
         
         TransformObjectsCommand::Ptr TransformObjectsCommand::rotateObjects(View::MapDocumentWPtr document, const Vec3& center, const Vec3& axis, const FloatType angle, const bool lockTextures, const Model::ObjectList& objects) {
-            const Mat4x4 transform = translationMatrix(center) * rotationMatrix(axis, angle) * translationMatrix(-center);
+            const Mat4x4 transform = translationMatrix(center) * rotationMatrix4(axis, angle) * translationMatrix(-center);
             return Ptr(new TransformObjectsCommand(document, Action_Rotate, transform, lockTextures, objects));
         }
         
         TransformObjectsCommand::Ptr TransformObjectsCommand::flipObjects(View::MapDocumentWPtr document, const Vec3& center, Math::Axis::Type axis, const bool lockTextures, const Model::ObjectList& objects) {
-            const Mat4x4 transform = translationMatrix(center) * mirrorMatrix<FloatType>(axis) * translationMatrix(-center);
+            const Mat4x4 transform = translationMatrix(center) * mirrorMatrix4<FloatType>(axis) * translationMatrix(-center);
             return Ptr(new TransformObjectsCommand(document, Action_Flip, transform, lockTextures, objects));
         }
         

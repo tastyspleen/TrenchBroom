@@ -62,6 +62,15 @@ public:
         setIdentity();
     }
     
+    Mat<T,R,C>(const T v11, const T v12,
+               const T v21, const T v22) {
+        v[0][0] = v11; v[1][0] = v12;
+        v[0][1] = v21; v[1][1] = v22;
+        for (size_t c = 2; c < C; c++)
+            for (size_t r = 2; r < R; r++)
+                v[c][r] = c == r ? static_cast<T>(1.0) : static_cast<T>(0.0);
+    }
+
     Mat<T,R,C>(const T v11, const T v12, const T v13,
                const T v21, const T v22, const T v23,
                const T v31, const T v32, const T v33) {
@@ -70,7 +79,7 @@ public:
         v[0][2] = v31; v[1][2] = v32; v[2][2] = v33;
         for (size_t c = 3; c < C; c++)
             for (size_t r = 3; r < R; r++)
-                v[c][r] = static_cast<T>(0.0);
+                v[c][r] = c == r ? static_cast<T>(1.0) : static_cast<T>(0.0);
     }
     
     Mat<T,R,C>(const T v11, const T v12, const T v13, const T v14,
@@ -83,7 +92,7 @@ public:
         v[0][3] = v41; v[1][3] = v42; v[2][3] = v43; v[3][3] = v44;
         for (size_t c = 4; c < C; c++)
             for (size_t r = 4; r < R; r++)
-                v[c][r] = static_cast<T>(0.0);
+                v[c][r] = c == r ? static_cast<T>(1.0) : static_cast<T>(0.0);
     }
     
     template <typename U>
@@ -100,6 +109,18 @@ public:
         return *this;
     }
     
+    template <typename U, size_t S, size_t D>
+    static Mat<T,R,C> embed(const Mat<U,S,D>& other) {
+        Mat<T,R,C> result;
+        for (size_t c = 0; c < std::min(C,D); c++)
+            for (size_t r = 0; r < std::min(R,S); r++)
+                result[c][r] = static_cast<T>(other[c][r]);
+        for (size_t c = std::min(C,D); c < C; c++)
+            for (size_t r = std::min(R,S); r < R; r++)
+                result[c][r] = c == r ? static_cast<T>(1.0) : static_cast<T>(0.0);
+        return result;
+    }
+
     const Mat<T,R,C> operator- () const {
         Mat<T,R,C> result;
         for (size_t c = 0; c < C; c++)
@@ -245,7 +266,7 @@ public:
                 v[c][r] = static_cast<T>(0.0);
         return *this;
     }
-    
+
     const Mat<T,C,R> transposed() const {
         Mat<T,C,R> result;
         for (size_t c = 0; c < C; c++)
@@ -453,6 +474,30 @@ const Mat<T,S,S> invertedMatrix(const Mat<T,S,S>& mat) {
     return inverted;
 }
 
+template <typename T, size_t S>
+const Mat<T,S+1,S+1> translationMatrix(const Vec<T,S>& delta) {
+    Mat<T,S+1,S+1> translation;
+    for (size_t i = 0; i < S; ++i)
+        translation[S][i] = delta[i];
+    return translation;
+}
+
+template <typename T, size_t S>
+const Mat<T,S,S> translationMatrix(const Mat<T,S,S>& mat) {
+    Mat<T,S,S> result;
+    for (size_t i = 0; i < S-1; ++i)
+        result[S-1][i] = mat[S-1][i];
+    return result;
+}
+
+template <typename T, size_t S>
+const Mat<T,S,S> stripTranslation(const Mat<T,S,S>& mat) {
+    Mat<T,S,S> result(mat);
+    for (size_t i = 0; i < S-1; ++i)
+        result[S-1][i] = static_cast<T>(0.0);
+    return result;
+}
+
 template <typename T>
 const Mat<T,4,4> perspectiveMatrix(const T fov, const T nearPlane, const T farPlane, const int width, const int height) {
     const T vFrustum = std::tan(Math::radians(fov) / static_cast<T>(2.0)) * static_cast<T>(0.75) * nearPlane;
@@ -500,9 +545,17 @@ const Mat<T,4,4> viewMatrix(const Vec<T,3>& direction, const Vec<T,3>& up) {
                       zero,  zero,  zero, one);
 }
 
+template <typename T>
+const Mat<T,4,4> coordinateSystemMatrix(const Vec<T,3>& x, const Vec<T,3>& y, const Vec<T,3>& z, const Vec<T,3>& o) {
+    return invertedMatrix(Mat<T,4,4>(x[0], y[0], z[0], o[0],
+                                     x[1], y[1], z[1], o[1],
+                                     x[2], y[2], z[2], o[2],
+                                     0.0,  0.0,  0.0,  1.0));
+}
+
 // The returned matrix will rotate any point counter-clockwise about the given axis by the given angle (in radians).
 template <typename T>
-const Mat<T,4,4> rotationMatrix(const Vec<T,3>& axis, const T angle) {
+const Mat<T,4,4> rotationMatrix4(const Vec<T,3>& axis, const T angle) {
     const T s = std::sin(-angle);
     const T c = std::cos(-angle);
     const T i = static_cast<T>(1.0 - c);
@@ -539,7 +592,7 @@ const Mat<T,4,4> rotationMatrix(const Vec<T,3>& axis, const T angle) {
 }
 
 template <typename T>
-const Mat<T,4,4> rotationMatrix(const Quat<T>& quat) {
+const Mat<T,4,4> rotationMatrix4(const Quat<T>& quat) {
     // see http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/
     
     const T x = quat.v[0];
@@ -568,31 +621,7 @@ const Mat<T,4,4> rotationMatrix(const Quat<T>& quat) {
 }
 
 template <typename T, size_t S>
-const Mat<T,S+1,S+1> translationMatrix(const Vec<T,S>& delta) {
-    Mat<T,S+1,S+1> translation;
-    for (size_t i = 0; i < S; ++i)
-        translation[S][i] = delta[i];
-    return translation;
-}
-
-template <typename T, size_t S>
-const Mat<T,S,S> translationMatrix(const Mat<T,S,S>& mat) {
-    Mat<T,S,S> result;
-    for (size_t i = 0; i < S-1; ++i)
-        result[S-1][i] = mat[S-1][i];
-    return result;
-}
-
-template <typename T, size_t S>
-const Mat<T,S,S> stripTranslation(const Mat<T,S,S>& mat) {
-    Mat<T,S,S> result(mat);
-    for (size_t i = 0; i < S-1; ++i)
-        result[S-1][i] = static_cast<T>(0.0);
-    return result;
-}
-
-template <typename T, size_t S>
-const Mat<T,S+1,S+1> scalingMatrix(const Vec<T,S>& factors) {
+const Mat<T,S+1,S+1> scalingMatrix4(const Vec<T,S>& factors) {
     Mat<T,S+1,S+1> scaling;
     for (size_t i = 0; i < S; ++i)
         scaling[i][i] = factors[i];
@@ -600,7 +629,7 @@ const Mat<T,S+1,S+1> scalingMatrix(const Vec<T,S>& factors) {
 }
 
 template <size_t S, typename T>
-const Mat<T,S,S> scalingMatrix(const T f) {
+const Mat<T,S,S> scalingMatrix4(const T f) {
     Mat<T,S,S> scaling;
     for (size_t i = 0; i < S-1; ++i)
         scaling[i][i] = f;
@@ -608,7 +637,7 @@ const Mat<T,S,S> scalingMatrix(const T f) {
 }
 
 template <typename T>
-const Mat<T,4,4>& mirrorMatrix(const Math::Axis::Type axis) {
+const Mat<T,4,4>& mirrorMatrix4(const Math::Axis::Type axis) {
     switch (axis) {
         case Math::Axis::AX:
             return Mat<T,4,4>::MirX;
@@ -621,21 +650,13 @@ const Mat<T,4,4>& mirrorMatrix(const Math::Axis::Type axis) {
     }
 }
 
-template <typename T>
-const Mat<T,4,4> coordinateSystemMatrix(const Vec<T,3>& x, const Vec<T,3>& y, const Vec<T,3>& z, const Vec<T,3>& o) {
-    return invertedMatrix(Mat<T,4,4>(x[0], y[0], z[0], o[0],
-                                     x[1], y[1], z[1], o[1],
-                                     x[2], y[2], z[2], o[2],
-                                     0.0,  0.0,  0.0,  1.0));
-}
-
 /**
  Returns a matrix that will transform a point to a coordinate system where the X and
  Y axes are in the given plane and the Z axis is parallel to the given direction. This is useful for
  projecting points onto a plane along a particular direction.
  */
 template <typename T>
-const Mat<T,4,4> planeProjectionMatrix(const T distance, const Vec<T,3>& normal, const Vec<T,3>& direction) {
+const Mat<T,4,4> planeProjectionMatrix4(const T distance, const Vec<T,3>& normal, const Vec<T,3>& direction) {
     // create some coordinate system where the X and Y axes are contained within the plane
     // and the Z axis is the projection direction
     Vec<T,3> xAxis;
@@ -663,8 +684,8 @@ const Mat<T,4,4> planeProjectionMatrix(const T distance, const Vec<T,3>& normal,
  Y axes are in the given plane and the Z axis is the given normal.
  */
 template <typename T>
-const Mat<T,4,4> planeProjectionMatrix(const T distance, const Vec<T,3>& normal) {
-    return planeProjectionMatrix(distance, normal, normal);
+const Mat<T,4,4> planeProjectionMatrix4(const T distance, const Vec<T,3>& normal) {
+    return planeProjectionMatrix4(distance, normal, normal);
 }
 
 /**
@@ -672,12 +693,23 @@ const Mat<T,4,4> planeProjectionMatrix(const T distance, const Vec<T,3>& normal)
  (in radians).
  */
 template <typename T>
-const Mat<T,3,3> rotationMatrix(const T angle) {
+const Mat<T,3,3> rotationMatrix3(const T angle) {
     const T sin = std::sin(angle);
     const T cos = std::cos(angle);
     return Mat<T,3,3>(cos, -sin, 0.0,
                       sin,  cos, 0.0,
                       0.0,  0.0, 1.0);
+}
+
+/**
+ Returns a matrix that rotates a 3D vector in counter clockwise direction by the given angle (in radians).
+ */
+template <typename T>
+const Mat<T,2,2> rotationMatrix2(const T angle) {
+    const T sin = std::sin(angle);
+    const T cos = std::cos(angle);
+    return Mat<T,2,2>(cos, -sin,
+                      sin,  cos);
 }
 
 template <typename T, size_t R, size_t C>

@@ -24,7 +24,7 @@
 
 namespace TrenchBroom {
     namespace Model {
-        ParallelTexCoordSystem::ParallelTexCoordSystem(const Vec3& xAxis, const Vec3& yAxis, const Vec3& normal, const float rotation) :
+        ParallelTexCoordSystem::ParallelTexCoordSystem(const Vec3& xAxis, const Vec3& yAxis) :
         m_xAxis(xAxis),
         m_yAxis(yAxis) {}
         
@@ -91,6 +91,9 @@ namespace TrenchBroom {
             newOffset.correct(4);
 
             attribs.setOffset(newOffset);
+        }
+
+        void ParallelTexCoordSystem::doTransform(const Plane3& boundary, const Mat3x3& transformation, BrushFaceAttribs& attribs) {
         }
 
         float ParallelTexCoordSystem::doMeasureAngle(const float currentAngle, const Vec2f& center, const Vec2f& point) const {
