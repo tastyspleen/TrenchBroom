@@ -42,6 +42,7 @@
 #include "Controller/SplitBrushFacesCommand.h"
 #include "Controller/TextureCollectionCommand.h"
 #include "Controller/TransformObjectsCommand.h"
+#include "Controller/TransformTexCoordSystemCommand.h"
 #include "Model/ModelUtils.h"
 #include "View/MapDocument.h"
 #include "View/ViewTypes.h"
@@ -637,6 +638,13 @@ namespace TrenchBroom {
             using namespace Controller;
             
             Command::Ptr command = RotateTexturesCommand::rotateTextures(m_document, faces, angle);
+            return m_commandProcessor.submitAndStoreCommand(command);
+        }
+
+        bool ControllerFacade::rotateTextures(const Model::BrushFaceList& faces, const FloatType angle, const Vec3& invariant) {
+            using namespace Controller;
+            
+            Command::Ptr command = TransformTexCoordSystemCommand::rotateTextures(m_document, faces, angle, invariant);
             return m_commandProcessor.submitAndStoreCommand(command);
         }
     }

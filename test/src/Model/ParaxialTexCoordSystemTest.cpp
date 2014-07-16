@@ -78,7 +78,7 @@ namespace TrenchBroom {
             // rotate 15 degs
             posZ = ParaxialTexCoordSystem(Vec3::Null, Vec3::PosY, Vec3::PosX);
             attribs = BrushFaceAttribs("textureName");
-            posZ.transform(Plane3(0.0, Vec3::PosZ), rotationMatrix2(Math::radians(15.0)), attribs);
+            posZ.transform(Plane3(0.0, Vec3::PosZ), rotationMatrix2(Math::radians(15.0)), attribs, Vec3::Null);
             ASSERT_VEC_EQ(Vec2f::Null, attribs.offset());
             ASSERT_VEC_EQ(Vec2f::One, attribs.scale());
             assertRotation(15.0f, attribs);
@@ -86,7 +86,7 @@ namespace TrenchBroom {
             // rotate 210 degs
             posZ = ParaxialTexCoordSystem(Vec3::Null, Vec3::PosY, Vec3::PosX);
             attribs = BrushFaceAttribs("textureName");
-            posZ.transform(Plane3(0.0, Vec3::PosZ), rotationMatrix2(Math::radians(210.0)), attribs);
+            posZ.transform(Plane3(0.0, Vec3::PosZ), rotationMatrix2(Math::radians(210.0)), attribs, Vec3::Null);
             ASSERT_VEC_EQ(Vec2f::Null, attribs.offset());
             ASSERT_VEC_EQ(Vec2f::One, attribs.scale());
             assertRotation(210.0f, attribs);
@@ -94,7 +94,7 @@ namespace TrenchBroom {
             // rotate -15 degs
             posZ = ParaxialTexCoordSystem(Vec3::Null, Vec3::PosY, Vec3::PosX);
             attribs = BrushFaceAttribs("textureName");
-            posZ.transform(Plane3(0.0, Vec3(0.5, 0.2, 0.9).normalized()), rotationMatrix2(Math::radians(-15.0)), attribs);
+            posZ.transform(Plane3(0.0, Vec3(0.5, 0.2, 0.9).normalized()), rotationMatrix2(Math::radians(-15.0)), attribs, Vec3::Null);
             ASSERT_VEC_EQ(Vec2f::Null, attribs.offset());
             ASSERT_VEC_EQ(Vec2f::One, attribs.scale());
             assertRotation(-15.0f, attribs);
@@ -131,7 +131,7 @@ namespace TrenchBroom {
             posZ = ParaxialTexCoordSystem(Vec3::Null, Vec3::PosY, Vec3::PosX);
             attribs = BrushFaceAttribs("textureName");
             attribs.setScale(Vec2f(1.1f, 0.75f));
-            posZ.transform(Plane3(0.0, Vec3::PosZ), rotationMatrix2(Math::radians(15.0)), attribs);
+            posZ.transform(Plane3(0.0, Vec3::PosZ), rotationMatrix2(Math::radians(15.0)), attribs, Vec3::Null);
             ASSERT_VEC_EQ(Vec2f::Null, attribs.offset());
             ASSERT_VEC_EQ(Vec2f(1.1f, 0.75f), attribs.scale());
             assertRotation(15.0f, attribs);
@@ -157,7 +157,7 @@ namespace TrenchBroom {
             // scale X by 1.15
             posZ = ParaxialTexCoordSystem(Vec3::Null, Vec3::PosY, Vec3::PosX);
             attribs = BrushFaceAttribs("textureName");
-            posZ.transform(Plane3(0.0, Vec3::PosZ), scalingMatrix(Vec2(1.15, 1.0)), attribs);
+            posZ.transform(Plane3(0.0, Vec3::PosZ), scalingMatrix(Vec2(1.15, 1.0)), attribs, Vec3::Null);
             ASSERT_VEC_EQ(Vec2f::Null, attribs.offset());
             ASSERT_VEC_EQ(Vec2f(1.15f, 1.0f), attribs.scale());
             assertRotation(0.0f, attribs);

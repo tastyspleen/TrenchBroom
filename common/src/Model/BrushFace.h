@@ -177,7 +177,7 @@ namespace TrenchBroom {
             
             void moveTexture(const Vec3& up, const Vec3& right, const Vec2f& offset);
             void rotateTexture(float angle);
-            void transformTexture(const Mat2x2& transform);
+            void transformTexture(const Mat2x2& transform, const Vec3& invariant);
             
             void transform(const Mat4x4& transform, const bool lockTexture);
             void invert();

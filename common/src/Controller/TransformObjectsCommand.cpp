@@ -119,7 +119,7 @@ namespace TrenchBroom {
                 return false;
             if (other->m_action != m_action)
                 return false;
-            m_transformation = m_transformation * other->m_transformation;
+            m_transformation = other->m_transformation * m_transformation;
             return true;
         }
     }
