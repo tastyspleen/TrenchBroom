@@ -30,6 +30,7 @@
 #include "Model/Entity.h"
 #include "Model/HitAdapter.h"
 #include "Model/Map.h"
+#include "Model/ModelUtils.h"
 #include "Model/Object.h"
 #include "Renderer/PerspectiveCamera.h"
 #include "Renderer/RenderContext.h"
@@ -51,6 +52,7 @@
 #include "View/ResizeBrushesTool.h"
 #include "View/RotateObjectsTool.h"
 #include "View/SelectionTool.h"
+#include "View/SetFaceAttribsTool.h"
 #include "View/TextureTool.h"
 #include "View/VertexTool.h"
 #include "View/wxUtils.h"
@@ -79,6 +81,7 @@ namespace TrenchBroom {
         m_resizeBrushesTool(NULL),
         m_rotateObjectsTool(NULL),
         m_selectionTool(NULL),
+        m_setFaceAttribsTool(NULL),
         m_textureTool(NULL),
         m_flyModeHelper(this, camera),
         m_renderer(document, contextHolder()->fontManager()),
@@ -734,32 +737,46 @@ namespace TrenchBroom {
             return NULL;
         }
         
-        bool MapView::canReparentBrushes(const Model::BrushList& brushes, const Model::Entity* newParent) const {
-            Model::BrushList::const_iterator it, end;
-            for (it = brushes.begin(), end = brushes.end(); it != end; ++it) {
-                const Model::Brush* brush = *it;
-                if (brush->parent() != newParent)
-                    return true;
-            }
-            return false;
-        }
-        
         // note that we make a copy of the brush list on purpose here
-        void MapView::reparentBrushes(const Model::BrushList brushes, Model::Entity* newParent) {
+        void MapView::reparentBrushes(const Model::BrushList& brushes, Model::Entity* newParent) {
             assert(newParent != NULL);
-            assert(canReparentBrushes(brushes, newParent));
+            
+            const Model::BrushList reparentableBrushes = filterReparentableBrushes(brushes, newParent);
+            assert(!reparentableBrushes.empty());
             
             ControllerSPtr controller = lock(m_controller);
             
             StringStream name;
-            name << "Move " << (brushes.size() == 1 ? "Brush" : "Brushes") << " to " << newParent->classname("<missing classname>");
+            name << "Move " << (reparentableBrushes.size() == 1 ? "Brush" : "Brushes") << " to " << newParent->classname("<missing classname>");
             
             const UndoableCommandGroup commandGroup(controller, name.str());
             controller->deselectAll();
-            controller->reparentBrushes(brushes, newParent);
+            controller->reparentBrushes(reparentableBrushes, newParent);
             controller->selectObjects(VectorUtils::cast<Model::Object*>(brushes));
         }
         
+        struct ReparentFilter {
+        private:
+            const Model::Entity* m_newParent;
+        public:
+            ReparentFilter(const Model::Entity* newParent) :
+            m_newParent(newParent) {}
+            
+            bool operator()(Model::Brush* brush) const {
+                return brush->parent() != m_newParent;
+            }
+        };
+
+        bool MapView::canReparentBrushes(const Model::BrushList& brushes, const Model::Entity* newParent) const {
+            return Model::any(brushes.begin(), brushes.end(), ReparentFilter(newParent));
+        }
+        
+        Model::BrushList MapView::filterReparentableBrushes(const Model::BrushList& brushes, Model::Entity* newParent) {
+            Model::BrushList result;
+            Model::filter(brushes.begin(), brushes.end(), ReparentFilter(newParent), std::back_inserter(result));
+            return result;
+        }
+
         Assets::EntityDefinition* MapView::findEntityDefinition(const Assets::EntityDefinitionGroups& groups, const size_t index) const {
             Assets::EntityDefinitionGroups::const_iterator groupIt, groupEnd;
             Assets::EntityDefinitionList::const_iterator defIt, defEnd;
@@ -1056,6 +1073,7 @@ namespace TrenchBroom {
             m_resizeBrushesTool = new ResizeBrushesTool(m_document, m_controller, m_camera);
             m_rotateObjectsTool = new RotateObjectsTool(m_document, m_controller, m_camera, m_movementRestriction, font);
             m_selectionTool = new SelectionTool(m_document, m_controller);
+            m_setFaceAttribsTool = new SetFaceAttribsTool(m_document, m_controller);
             m_textureTool = new TextureTool(m_document, m_controller);
             m_vertexTool = new VertexTool(m_document, m_controller, m_movementRestriction, font);
             
@@ -1068,6 +1086,7 @@ namespace TrenchBroom {
             m_toolBox.addTool(m_createBrushTool);
             m_toolBox.addTool(m_moveObjectsTool);
             m_toolBox.addTool(m_resizeBrushesTool);
+            m_toolBox.addTool(m_setFaceAttribsTool);
             m_toolBox.addTool(m_selectionTool);
         }
         
@@ -1088,6 +1107,8 @@ namespace TrenchBroom {
             m_rotateObjectsTool = NULL;
             delete m_selectionTool;
             m_selectionTool = NULL;
+            delete m_setFaceAttribsTool;
+            m_setFaceAttribsTool = NULL;
             delete m_textureTool;
             m_textureTool = NULL;
             delete m_vertexTool;
