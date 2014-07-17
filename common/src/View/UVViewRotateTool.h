@@ -42,7 +42,8 @@ namespace TrenchBroom {
             
             UVViewHelper& m_helper;
 
-            float m_initalAngle;
+            Vec3 m_initialPoint;
+            float m_totalAngleDelta;
         public:
             UVViewRotateTool(MapDocumentWPtr document, ControllerWPtr controller, UVViewHelper& helper);
         private:

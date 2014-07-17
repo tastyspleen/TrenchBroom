@@ -79,16 +79,13 @@ namespace TrenchBroom {
                 return false;
 
             const Hits& hits = inputState.hits();
-            const Hit& angleHandleHit = hits.findFirst(AngleHandleHit, true);
+            const Hit& hit = hits.findFirst(AngleHandleHit, true);
 
-            if (!angleHandleHit.isMatch())
+            if (!hit.isMatch())
                 return false;
 
-            const Model::BrushFace* face = m_helper.face();
-            const Mat4x4 toFace = face->toTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true);
-
-            const Vec2f hitPointInFaceCoords(toFace * angleHandleHit.hitPoint());
-            m_initalAngle = measureAngle(hitPointInFaceCoords) - face->rotation();
+            m_initialPoint = hit.hitPoint();
+            m_totalAngleDelta = 0.0f;
 
             controller()->beginUndoableGroup("Rotate Texture");
             
@@ -102,26 +99,23 @@ namespace TrenchBroom {
             const Plane3& boundary = face->boundary();
             const Ray3& pickRay    = inputState.pickRay();
             
-            const FloatType curPointDistance = pickRay.intersectWithPlane(boundary.normal, boundary.anchor());
-            const Vec3 curPoint              = pickRay.pointAtDistance(curPointDistance);
+            const FloatType distance = pickRay.intersectWithPlane(boundary.normal, boundary.anchor());
+            const Vec3 point         = pickRay.pointAtDistance(distance);
             
-            const Mat4x4 toFaceOld = face->toTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true);
-            const Mat4x4 toWorld   = face->fromTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true);
-
-            const Vec2f curPointInFaceCoords(toFaceOld * curPoint);
-            const float curAngle = measureAngle(curPointInFaceCoords);
-
-            const float angle = curAngle - m_initalAngle;
-            const float snappedAngle = Math::correct(snapAngle(angle), 4, 0.0f);
-
-            if (snappedAngle != 0.0f) {
-                const Vec3 invariant = face->fromTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true) * Vec3(m_helper.originInFaceCoords());
-                assert(Math::zero((invariant - boundary.anchor()).dot(boundary.normal)));
-                
+            const Vec3 origin   = face->fromTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true) * Vec3(m_helper.originInFaceCoords());
+            const Vec3 axis     = normalize(m_initialPoint - origin);
+            const Vec3 vec      = normalize(point - origin);
+            
+            // invert the measured angle here because texture rotation is clockwise
+            const float angle   = static_cast<float>(-Math::degrees(angleBetween(vec, axis, boundary.normal)));
+            const float delta   = angle - m_totalAngleDelta;
+            const float snapped = Math::correct(snapAngle(face->rotation() + delta) - face->rotation(), 4, 0.0f);
+            
+            if (snapped != 0.0f) {
                 const Model::BrushFaceList applyTo(1, face);
-                controller()->rotateTextures(applyTo, snappedAngle, invariant);
-                
-                m_helper.setOrigin(Vec2f(face->toTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true) * invariant));
+                controller()->rotateTextures(applyTo, snapped, origin);
+                m_helper.setOrigin(Vec2f(face->toTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true) * origin));
+                m_totalAngleDelta += snapped;
             }
             
             return true;

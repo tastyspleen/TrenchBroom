@@ -832,6 +832,16 @@ typename Vec<T,S>::List operator*(const T left, const typename Vec<T,S>::List& r
     return right * left;
 }
 
+template <typename T, size_t S>
+Vec<T,S>& normalize(Vec<T,S>& vec) {
+    return vec.normalize();
+}
+
+template <typename T, size_t S>
+Vec<T,S> normalize(const Vec<T,S>& vec) {
+    return vec.normalized();
+}
+
 template <typename T>
 T wedge(const Vec<T,2>& left, const Vec<T,2>& right) {
     return left.x() * right.y() - left.y() * right.x();
@@ -849,10 +859,13 @@ const Vec<T,3> crossed(const Vec<T,3>& left, const Vec<T,3>& right) {
                     left[0] * right[1] - left[1] * right[0]);
 }
 
+/*
+ computes the CCW angle between axis and vector in relation to the given up vector
+ all vectors are expected to be normalized
+ result is in radians
+*/
 template <typename T>
 T angleBetween(const Vec<T,3> vec, const Vec<T,3>& axis, const Vec<T,3>& up) {
-    // computes the CCW angle between axis and vector in relation to the given up vector
-    // all vectors are expected to be normalized
     const T cos = vec.dot(axis);
     if (cos == static_cast<T>(1.0))
         return static_cast<T>(0.0);
@@ -864,10 +877,13 @@ T angleBetween(const Vec<T,3> vec, const Vec<T,3>& axis, const Vec<T,3>& up) {
     return Math::Constants<T>::twoPi() - std::acos(cos);
 }
 
+/*
+ computes the CCW angle between axis and vector
+ all vectors are expected to be normalized
+ result is in radians
+ */
 template <typename T>
 T angleBetween(const Vec<T,2> vec, const Vec<T,2>& axis) {
-    // computes the CCW angle between axis and vector
-    // all vectors are expected to be normalized
     // we must invert the sign of the result because atan2 computes the CW angle
     const T y = wedge(vec, axis);
     const T x = vec.dot(axis);
