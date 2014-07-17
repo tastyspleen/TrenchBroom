@@ -232,7 +232,7 @@ namespace TrenchBroom {
             const float newRotation = Math::correct(oldRotation + float(angleDelta), 4);
             const Vec2f newScale = (attribs.scale() * Vec2f(scaleDelta)).corrected(4);
             
-            const Vec2 oldCoords = getTexCoords(invariant, attribs) * attribs.textureSize();
+            const Vec2f oldCoords = getTexCoords(invariant, attribs) * attribs.textureSize();
             
 //            attribs.setOffset(attribs.offset() + Vec2f(offset));
             attribs.setRotation(newRotation);
@@ -240,8 +240,9 @@ namespace TrenchBroom {
             
             doSetRotation(boundary.normal, oldRotation, newRotation);
             
-            const Vec2 newCoords = getTexCoords(invariant, attribs) * attribs.textureSize();
-            const Vec2f newOffset = (oldCoords - newCoords).corrected(4);
+            const Vec2f oldOffset = attribs.offset();
+            const Vec2f newCoords = getTexCoords(invariant, attribs) * attribs.textureSize();
+            const Vec2f newOffset = (oldOffset + oldCoords - newCoords).corrected(4);
             attribs.setOffset(newOffset);
         }
         
