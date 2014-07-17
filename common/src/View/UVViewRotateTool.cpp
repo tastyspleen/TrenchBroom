@@ -39,7 +39,7 @@
 namespace TrenchBroom {
     namespace View {
         const Hit::HitType UVViewRotateTool::AngleHandleHit = Hit::freeHitType();
-        const float UVViewRotateTool::CenterHandleRadius =  5.0f;
+        const float UVViewRotateTool::CenterHandleRadius =  2.0f;
         const float UVViewRotateTool::RotateHandleRadius = 32.0f;
         const float UVViewRotateTool::RotateHandleWidth  =  5.0f;
 
@@ -188,21 +188,16 @@ namespace TrenchBroom {
             const Mat4x4 toPlane = planeProjectionMatrix4(boundary.distance, boundary.normal);
             const Mat4x4 fromPlane = invertedMatrix(toPlane);
             
-            
             const Vec2f originPosition(toPlane * fromFace * Vec3(m_helper.originInFaceCoords()));
             const Vec2f faceCenterPosition(toPlane * m_helper.face()->boundsCenter());
 
             Renderer::Vbo vbo(0xFFF);
             Renderer::SetVboState vboState(vbo);
-            Renderer::Circle center(CenterHandleRadius / cameraZoom / 2.0f, 10, true);
-            Renderer::Circle fill(CenterHandleRadius / cameraZoom, 16, true);
-            Renderer::Circle centerHighlight(CenterHandleRadius / cameraZoom * 2.0f, 16, false);
+            Renderer::Circle center(CenterHandleRadius / cameraZoom, 10, true);
             Renderer::Circle outer(RotateHandleRadius / cameraZoom, 32, false);
 
             vboState.mapped();
             center.prepare(vbo);
-            fill.prepare(vbo);
-            centerHighlight.prepare(vbo);
             outer.prepare(vbo);
             vboState.active();
 
@@ -211,11 +206,10 @@ namespace TrenchBroom {
             {
                 const Mat4x4 translation = translationMatrix(Vec3(originPosition));
                 const Renderer::MultiplyModelMatrix centerTransform(renderContext.transformation(), translation);
-                shader.set("Color", handleColor);
-                fill.render();
-
                 if (highlightAngleHandle)
                     shader.set("Color", highlightColor);
+                else
+                    shader.set("Color", handleColor);
                 outer.render();
             }
             

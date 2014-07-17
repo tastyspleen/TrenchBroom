@@ -18,12 +18,16 @@
  */
 
 #include "UVViewOriginTool.h"
+#include "PreferenceManager.h"
+#include "Preferences.h"
 #include "Assets/Texture.h"
 #include "Model/BrushFace.h"
 #include "Model/BrushVertex.h"
 #include "Model/ModelTypes.h"
+#include "Renderer/Circle.h"
 #include "Renderer/EdgeRenderer.h"
 #include "Renderer/RenderContext.h"
+#include "Renderer/ShaderManager.h"
 #include "Renderer/VertexSpec.h"
 #include "View/ControllerFacade.h"
 #include "View/InputState.h"
@@ -33,6 +37,8 @@ namespace TrenchBroom {
     namespace View {
         const Hit::HitType UVViewOriginTool::XHandleHit = Hit::freeHitType();
         const Hit::HitType UVViewOriginTool::YHandleHit = Hit::freeHitType();
+
+        const float UVViewOriginTool::CenterHandleRadius =  5.0f;
         const FloatType UVViewOriginTool::MaxPickDistance = 5.0;
 
         UVViewOriginTool::UVViewOriginTool(MapDocumentWPtr document, ControllerWPtr controller, UVViewHelper& helper) :
@@ -43,27 +49,38 @@ namespace TrenchBroom {
             if (m_helper.valid()) {
                 const Ray3& pickRay = inputState.pickRay();
 
+                const Model::BrushFace* face = m_helper.face();
+                const Mat4x4 toWorld = face->fromTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, true);
+                
                 Line3 xHandle, yHandle;
                 computeOriginHandles(xHandle, yHandle);
-                
-                const Ray3::LineDistance xDistance = pickRay.distanceToLine(xHandle.point, xHandle.direction);
-                const Ray3::LineDistance yDistance = pickRay.distanceToLine(yHandle.point, yHandle.direction);
-                
-                assert(!xDistance.parallel);
-                assert(!yDistance.parallel);
-                
-                const FloatType maxDistance  = MaxPickDistance / m_helper.cameraZoom();
-                const FloatType absXDistance = Math::abs(xDistance.distance);
-                const FloatType absYDistance = Math::abs(yDistance.distance);
-                
-                if (absXDistance <= maxDistance) {
-                    const Vec3 hitPoint = pickRay.pointAtDistance(xDistance.rayDistance);
-                    hits.addHit(Hit(XHandleHit, xDistance.rayDistance, hitPoint, xHandle, absXDistance));
-                }
-                
-                if (absYDistance <= maxDistance) {
-                    const Vec3 hitPoint = pickRay.pointAtDistance(yDistance.rayDistance);
-                    hits.addHit(Hit(YHandleHit, yDistance.rayDistance, hitPoint, yHandle, absYDistance));
+
+                const Vec3 origin = toWorld * Vec3(m_helper.originInFaceCoords());
+                const Ray3::PointDistance oDistance = pickRay.distanceToPoint(origin);
+                if (oDistance.distance <= 2.0 * CenterHandleRadius / m_helper.cameraZoom()) {
+                    const Vec3 hitPoint = pickRay.pointAtDistance(oDistance.rayDistance);
+                    hits.addHit(Hit(XHandleHit, oDistance.rayDistance, hitPoint, xHandle, oDistance.distance));
+                    hits.addHit(Hit(YHandleHit, oDistance.rayDistance, hitPoint, xHandle, oDistance.distance));
+                } else {
+                    const Ray3::LineDistance xDistance = pickRay.distanceToLine(xHandle.point, xHandle.direction);
+                    const Ray3::LineDistance yDistance = pickRay.distanceToLine(yHandle.point, yHandle.direction);
+                    
+                    assert(!xDistance.parallel);
+                    assert(!yDistance.parallel);
+                    
+                    const FloatType absXDistance = Math::abs(xDistance.distance);
+                    const FloatType absYDistance = Math::abs(yDistance.distance);
+                    
+                    const FloatType maxDistance  = MaxPickDistance / m_helper.cameraZoom();
+                    if (absXDistance <= maxDistance) {
+                        const Vec3 hitPoint = pickRay.pointAtDistance(xDistance.rayDistance);
+                        hits.addHit(Hit(XHandleHit, xDistance.rayDistance, hitPoint, xHandle, absXDistance));
+                    }
+                    
+                    if (absYDistance <= maxDistance) {
+                        const Vec3 hitPoint = pickRay.pointAtDistance(yDistance.rayDistance);
+                        hits.addHit(Hit(YHandleHit, yDistance.rayDistance, hitPoint, yHandle, absYDistance));
+                    }
                 }
             }
         }
@@ -182,6 +199,11 @@ namespace TrenchBroom {
             if (!m_helper.valid())
                 return;
             
+            renderXYHandles(inputState, renderContext);
+            renderOriginHandle(inputState, renderContext);
+        }
+
+        void UVViewOriginTool::renderXYHandles(const InputState& inputState, Renderer::RenderContext& renderContext) {
             EdgeVertex::List vertices = getHandleVertices(inputState.hits());
             
             glLineWidth(2.0f);
@@ -209,6 +231,56 @@ namespace TrenchBroom {
             vertices[2] = EdgeVertex(Vec3f(y1), yColor);
             vertices[3] = EdgeVertex(Vec3f(y2), yColor);
             return vertices;
+        }
+        
+        void UVViewOriginTool::renderOriginHandle(const InputState& inputState, Renderer::RenderContext& renderContext) {
+            const PreferenceManager& prefs = PreferenceManager::instance();
+            const Color& handleColor = prefs.get(Preferences::HandleColor);
+            const Color& highlightColor = prefs.get(Preferences::SelectedHandleColor);
+            const float cameraZoom = m_helper.cameraZoom();
+            
+            const Model::BrushFace* face = m_helper.face();
+            const Mat4x4 fromFace = face->fromTexCoordSystemMatrix(Vec2f::Null, Vec2f::One, false);
+            
+            const Plane3& boundary = face->boundary();
+            const Mat4x4 toPlane = planeProjectionMatrix4(boundary.distance, boundary.normal);
+            const Mat4x4 fromPlane = invertedMatrix(toPlane);
+            
+            const Vec2f originPosition(toPlane * fromFace * Vec3(m_helper.originInFaceCoords()));
+            
+            Renderer::Vbo vbo(0xFFF);
+            Renderer::SetVboState vboState(vbo);
+            
+            Renderer::Circle fill(CenterHandleRadius / cameraZoom, 16, true);
+            Renderer::Circle highlight(CenterHandleRadius / cameraZoom * 2.0f, 16, false);
+            
+            vboState.mapped();
+            fill.prepare(vbo);
+            highlight.prepare(vbo);
+            vboState.active();
+            
+            const Hits& hits = inputState.hits();
+            const Hit& xHandleHit = hits.findFirst(XHandleHit, true);
+            const Hit& yHandleHit = hits.findFirst(YHandleHit, true);
+            const bool highlightXHandle = (dragging() && m_selector.x() > 0.0) || (!dragging() && xHandleHit.isMatch());
+            const bool highlightYHandle = (dragging() && m_selector.y() > 0.0) || (!dragging() && yHandleHit.isMatch());
+            const bool highlightCenter = highlightXHandle && highlightYHandle;
+
+            glDisable(GL_DEPTH_TEST);
+            
+            Renderer::ActiveShader shader(renderContext.shaderManager(), Renderer::Shaders::VaryingPUniformCShader);
+            const Renderer::MultiplyModelMatrix toWorldTransform(renderContext.transformation(), fromPlane);
+            const Mat4x4 translation = translationMatrix(Vec3(originPosition));
+            const Renderer::MultiplyModelMatrix centerTransform(renderContext.transformation(), translation);
+            shader.set("Color", handleColor);
+            fill.render();
+            
+            if (highlightCenter) {
+                shader.set("Color", highlightColor);
+                highlight.render();
+            }
+            
+            glEnable(GL_DEPTH_TEST);
         }
     }
 }
