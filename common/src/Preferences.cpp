@@ -84,7 +84,7 @@ namespace TrenchBroom {
 #ifdef __APPLE__
         Preference<String> RendererFontName(IO::Path("Renderer/Font name"), "LucidaGrande");
 #else
-        Preference<String> RendererFontName(IO::Path("Renderer/Font name"), "Liberation");
+        Preference<String> RendererFontName(IO::Path("Renderer/Font name"), "LiberationSans-Regular");
 #endif
         Preference<int> RendererFontSize(IO::Path("Renderer/Font size"), 13);
         
