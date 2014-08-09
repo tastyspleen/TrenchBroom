@@ -124,6 +124,8 @@ namespace TrenchBroom {
                 m_lastCommandStack.clear();
                 m_nextCommandStack.clear();
             }
+            if (m_groupLevel == 0)
+                documentChangedNotifier();
             return true;
         }
         
@@ -180,6 +182,7 @@ namespace TrenchBroom {
             if (command->performUndo()) {
                 if (command->type() != CommandGroup::Type)
                     commandUndoneNotifier(command);
+                documentChangedNotifier();
                 return true;
             }
             if (command->type() != CommandGroup::Type)
@@ -236,6 +239,7 @@ namespace TrenchBroom {
                                                                    commandUndoneNotifier));
                 m_groupedCommands.clear();
                 pushLastCommand(group);
+                documentChangedNotifier();
             }
             m_groupName = "";
             m_groupUndoable = false;

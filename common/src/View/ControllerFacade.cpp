@@ -82,7 +82,8 @@ namespace TrenchBroom {
         commandDoFailedNotifier(m_commandProcessor.commandDoFailedNotifier),
         commandUndoNotifier(m_commandProcessor.commandUndoNotifier),
         commandUndoneNotifier(m_commandProcessor.commandUndoneNotifier),
-        commandUndoFailedNotifier(m_commandProcessor.commandUndoFailedNotifier) {}
+        commandUndoFailedNotifier(m_commandProcessor.commandUndoFailedNotifier),
+        documentChangedNotifier(m_commandProcessor.documentChangedNotifier) {}
         
         bool ControllerFacade::hasLastCommand() const {
             return m_commandProcessor.hasLastCommand();

@@ -55,9 +55,11 @@ namespace TrenchBroom {
         class MapTreeViewDataModel : public wxDataViewModel {
         private:
             MapDocumentWPtr m_document;
+            ControllerWPtr m_controller;
         public:
-            MapTreeViewDataModel(MapDocumentWPtr document) :
-            m_document(document) {
+            MapTreeViewDataModel(MapDocumentWPtr document, ControllerWPtr controller) :
+            m_document(document),
+            m_controller(controller) {
                 bindObservers();
             }
 
@@ -171,6 +173,7 @@ namespace TrenchBroom {
             }
 
             void bindObservers() {
+                /*
                 MapDocumentSPtr document = lock(m_document);
                 document->documentWasClearedNotifier.addObserver(this, &MapTreeViewDataModel::documentWasCleared);
                 document->documentWasNewedNotifier.addObserver(this, &MapTreeViewDataModel::documentWasNewedOrLoaded);
@@ -178,9 +181,14 @@ namespace TrenchBroom {
                 document->objectsWereAddedNotifier.addObserver(this, &MapTreeViewDataModel::objectsWereAdded);
                 document->objectsWereRemovedNotifier.addObserver(this, &MapTreeViewDataModel::objectsWereRemoved);
                 document->objectsDidChangeNotifier.addObserver(this, &MapTreeViewDataModel::objectsDidChange);
+                 */
+
+                ControllerSPtr controller = lock(m_controller);
+                controller->documentChangedNotifier.addObserver(this, &MapTreeViewDataModel::documentChanged);
             }
 
             void unbindObservers() {
+                /*
                 if (!expired(m_document)) {
                     MapDocumentSPtr document = lock(m_document);
                     document->documentWasClearedNotifier.removeObserver(this, &MapTreeViewDataModel::documentWasCleared);
@@ -190,6 +198,12 @@ namespace TrenchBroom {
                     document->objectsWereRemovedNotifier.removeObserver(this, &MapTreeViewDataModel::objectsWereRemoved);
                     document->objectsDidChangeNotifier.removeObserver(this, &MapTreeViewDataModel::objectsDidChange);
                 }
+                 */
+                
+                if (!expired(m_controller)) {
+                    ControllerSPtr controller = lock(m_controller);
+                    controller->documentChangedNotifier.removeObserver(this, &MapTreeViewDataModel::documentChanged);
+                }
             }
 
             void documentWasCleared() {
@@ -197,6 +211,12 @@ namespace TrenchBroom {
             }
             
             void documentWasNewedOrLoaded() {
+                addAllObjects();
+            }
+            
+            void documentChanged() {
+                lock(m_document)->debug("Rebuilding tree view");
+                Cleared();
                 addAllObjects();
             }
             
@@ -274,7 +294,7 @@ namespace TrenchBroom {
         m_ignoreTreeSelection(false),
         m_ignoreDocumentSelection(false) {
             m_tree = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_NO_HEADER | wxDV_MULTIPLE | wxBORDER_NONE);
-            m_tree->AssociateModel(new MapTreeViewDataModel(m_document));
+            m_tree->AssociateModel(new MapTreeViewDataModel(m_document, m_controller));
             m_tree->AppendTextColumn("Caption", 0)->SetWidth(200);
             m_tree->Expand(wxDataViewItem(NULL));
 

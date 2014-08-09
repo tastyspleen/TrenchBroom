@@ -80,6 +80,7 @@ namespace TrenchBroom {
             Notifier1<Controller::Command::Ptr>& commandUndoNotifier;
             Notifier1<Controller::Command::Ptr>& commandUndoneNotifier;
             Notifier1<Controller::Command::Ptr>& commandUndoFailedNotifier;
+            Notifier0& documentChangedNotifier;
             
             bool hasLastCommand() const;
             bool hasNextCommand() const;

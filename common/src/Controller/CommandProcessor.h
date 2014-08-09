@@ -76,6 +76,7 @@ namespace TrenchBroom {
             Notifier1<Command::Ptr> commandUndoNotifier;
             Notifier1<Command::Ptr> commandUndoneNotifier;
             Notifier1<Command::Ptr> commandUndoFailedNotifier;
+            Notifier0 documentChangedNotifier;
             
             bool hasLastCommand() const;
             bool hasNextCommand() const;
