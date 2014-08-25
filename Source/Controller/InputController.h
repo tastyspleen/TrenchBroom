@@ -124,6 +124,8 @@ namespace TrenchBroom {
 
             void render(Renderer::Vbo& vbo, Renderer::RenderContext& context);
 
+			ClipTool * newClipTool () const;
+
             inline ClipTool& clipTool() const {
                 return *m_clipTool;
             }

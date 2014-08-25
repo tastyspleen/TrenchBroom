@@ -393,6 +393,8 @@ namespace TrenchBroom {
             MenuItem::Ptr toggleAxisItem = objectActionMenu.addActionItem(KeyboardShortcut(View::CommandIds::Menu::EditToggleAxisRestriction, WXK_TAB, KeyboardShortcut::SCObjects | KeyboardShortcut::SCVertexTool, "Toggle Movement Axis"));
 #endif
             objectActionMenu.addSeparator();
+            objectActionMenu.addActionItem(KeyboardShortcut(View::CommandIds::Menu::EditClipBySelected, WXK_CONTROL, WXK_DELETE, KeyboardShortcut::SCObjects, "Clip By Selected"));
+            objectActionMenu.addSeparator();
             objectActionMenu.addActionItem(KeyboardShortcut(View::CommandIds::Menu::EditPrintFilePositions, KeyboardShortcut::SCObjects | KeyboardShortcut::SCTextures, "Print Line Numbers"));
 
             Menu& vertexActionMenu = actionMenu.addMenu("Vertices", View::CommandIds::Menu::EditVertexActions);

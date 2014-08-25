@@ -79,11 +79,6 @@ namespace TrenchBroom {
         }
 
         void ClipTool::updateBrushes() {
-            m_frontBrushes.clear();
-            m_backBrushes.clear();
-            
-            Model::BrushList allFrontBrushes, allBackBrushes;
-            
             Renderer::Camera& camera = view().camera();
             Vec3f planePoints[3];
             bool validPlane = false;
@@ -135,60 +130,12 @@ namespace TrenchBroom {
                 }
             }
             
+            m_frontBrushes.clear();
+            m_backBrushes.clear();
             const Model::BrushList& brushes = document().editStateManager().selectedBrushes();
+            Model::BrushList allFrontBrushes, allBackBrushes;
             if (validPlane) {
-                const BBoxf& worldBounds = document().map().worldBounds();
-                const bool forceIntegerFacePoints = document().map().forceIntegerFacePoints();
-                const String textureName = document().mruTexture() != NULL ? document().mruTexture()->name() : Model::Texture::Empty;
-                
-                Model::BrushList::const_iterator brushIt, brushEnd;
-                for (brushIt = brushes.begin(), brushEnd = brushes.end(); brushIt != brushEnd; ++brushIt) {
-                    Model::Brush& brush = **brushIt;
-                    Model::Entity* entity = brush.entity();
-                    Model::Face* frontFace = new Model::Face(worldBounds, forceIntegerFacePoints, planePoints[0], planePoints[1], planePoints[2], textureName);
-                    Model::Face* backFace = new Model::Face(worldBounds, forceIntegerFacePoints, planePoints[0], planePoints[2], planePoints[1], textureName);
-                    
-                    // determine the texture for the new faces
-                    // we will use the texture of the face whose normal is closest to the newly inserted face
-                    const Model::FaceList& faces = brush.faces();
-                    Model::FaceList::const_iterator faceIt = faces.begin();
-                    Model::FaceList::const_iterator faceEnd = faces.end();
-                    const Model::Face* bestFrontFace = *faceIt++;
-                    const Model::Face* bestBackFace = bestFrontFace;
-                    
-                    while (faceIt != faceEnd) {
-                        const Model::Face* face = *faceIt++;
-                        
-                        const Vec3f bestFrontDiff = bestFrontFace->boundary().normal - frontFace->boundary().normal;
-                        const Vec3f frontDiff = face->boundary().normal - frontFace->boundary().normal;
-                        if (frontDiff.lengthSquared() < bestFrontDiff.lengthSquared())
-                            bestFrontFace = face;
-                        
-                        const Vec3f bestBackDiff = bestBackFace->boundary().normal - backFace->boundary().normal;
-                        const Vec3f backDiff = face->boundary().normal - backFace->boundary().normal;
-                        if (backDiff.lengthSquared() < bestBackDiff.lengthSquared())
-                            bestBackFace = face;
-                    }
-                    
-                    frontFace->setAttributes(*bestFrontFace);
-                    backFace->setAttributes(*bestBackFace);
-                    
-                    Model::Brush* frontBrush = new Model::Brush(worldBounds, forceIntegerFacePoints, brush);
-                    if (frontBrush->clip(*frontFace)) {
-                        m_frontBrushes[entity].push_back(frontBrush);
-                        allFrontBrushes.push_back(frontBrush);
-                    } else {
-                        delete frontBrush;
-                    }
-                    
-                    Model::Brush* backBrush = new Model::Brush(worldBounds, forceIntegerFacePoints, brush);
-                    if (backBrush->clip(*backFace)) {
-                        m_backBrushes[entity].push_back(backBrush);
-                        allBackBrushes.push_back(backBrush);
-                    } else {
-                        delete backBrush;
-                    }
-                }
+				updateBrushesGivenValidPlane(brushes, planePoints, allFrontBrushes, allBackBrushes);
             } else {
                 allFrontBrushes = brushes;
                 m_frontBrushes = entityBrushes(allFrontBrushes);
@@ -198,6 +145,65 @@ namespace TrenchBroom {
             m_backBrushFigure->setBrushes(allBackBrushes);
         }
         
+		void ClipTool::updateBrushesGivenValidPlane (const Model::BrushList &selectedBrushes, const Vec3f (&planePoints)[3],
+													Model::BrushList &allFrontBrushes, Model::BrushList &allBackBrushes)
+		{
+            const BBoxf& worldBounds = document().map().worldBounds();
+            const bool forceIntegerFacePoints = document().map().forceIntegerFacePoints();
+            const String textureName = document().mruTexture() != NULL ? document().mruTexture()->name() : Model::Texture::Empty;
+			
+            Model::BrushList::const_iterator brushIt, brushEnd;
+            for (brushIt = selectedBrushes.begin(), brushEnd = selectedBrushes.end(); brushIt != brushEnd; ++brushIt) {
+                Model::Brush& brush = **brushIt;
+                Model::Entity* entity = brush.entity();
+                Model::Face* frontFace = new Model::Face(worldBounds, forceIntegerFacePoints, planePoints[0], planePoints[1], planePoints[2], textureName);
+                Model::Face* backFace = new Model::Face(worldBounds, forceIntegerFacePoints, planePoints[0], planePoints[2], planePoints[1], textureName);
+                    
+                // determine the texture for the new faces
+                // we will use the texture of the face whose normal is closest to the newly inserted face
+                const Model::FaceList& faces = brush.faces();
+                Model::FaceList::const_iterator faceIt = faces.begin();
+                Model::FaceList::const_iterator faceEnd = faces.end();
+                const Model::Face* bestFrontFace = *faceIt++;
+                const Model::Face* bestBackFace = bestFrontFace;
+                    
+                while (faceIt != faceEnd) {
+                    const Model::Face* face = *faceIt++;
+                        
+                    const Vec3f bestFrontDiff = bestFrontFace->boundary().normal - frontFace->boundary().normal;
+                    const Vec3f frontDiff = face->boundary().normal - frontFace->boundary().normal;
+                    if (frontDiff.lengthSquared() < bestFrontDiff.lengthSquared())
+                        bestFrontFace = face;
+                        
+                    const Vec3f bestBackDiff = bestBackFace->boundary().normal - backFace->boundary().normal;
+                    const Vec3f backDiff = face->boundary().normal - backFace->boundary().normal;
+                    if (backDiff.lengthSquared() < bestBackDiff.lengthSquared())
+                        bestBackFace = face;
+                }
+                    
+                frontFace->setAttributes(*bestFrontFace);
+                backFace->setAttributes(*bestBackFace);
+                    
+                Model::Brush* frontBrush = new Model::Brush(worldBounds, forceIntegerFacePoints, brush);
+                if (frontBrush->clip(*frontFace)) {
+                    m_frontBrushes[entity].push_back(frontBrush);
+                    allFrontBrushes.push_back(frontBrush);
+                } else {
+                    delete frontBrush;
+                }
+                    
+                Model::Brush* backBrush = new Model::Brush(worldBounds, forceIntegerFacePoints, brush);
+                if (backBrush->clip(*backFace)) {
+                    m_backBrushes[entity].push_back(backBrush);
+                    allBackBrushes.push_back(backBrush);
+                } else {
+                    delete backBrush;
+                }
+            }
+
+		}
+
+
         Vec3f::List ClipTool::getNormals(const Vec3f& hitPoint, const Model::Face& hitFace) const {
             bool found = false;
             Vec3f::List normals;
@@ -253,6 +259,13 @@ namespace TrenchBroom {
             return Math<float>::eq(std::abs(dot), 1.0f);
         }
 
+		void ClipTool::allocateRenderResources () {
+			handleFreeRenderResources();
+            Renderer::TextureRendererManager& textureRendererManager = document().sharedResources().textureRendererManager();
+            m_frontBrushFigure = new Renderer::BrushFigure(textureRendererManager);
+            m_backBrushFigure = new Renderer::BrushFigure(textureRendererManager);
+		}
+
         bool ClipTool::handleActivate(InputState& inputState) {
             m_numPoints = 0;
             m_hitIndex = -1;
@@ -261,9 +274,7 @@ namespace TrenchBroom {
             assert(m_frontBrushFigure == NULL);
             assert(m_backBrushFigure == NULL);
             
-            Renderer::TextureRendererManager& textureRendererManager = document().sharedResources().textureRendererManager();
-            m_frontBrushFigure = new Renderer::BrushFigure(textureRendererManager);
-            m_backBrushFigure = new Renderer::BrushFigure(textureRendererManager);
+			allocateRenderResources();
             
             updateBrushes();
             
@@ -596,6 +607,26 @@ namespace TrenchBroom {
             Controller::Command* command = new Controller::DocumentCommand(Controller::Command::ClipToolChange, document());
             submitCommand(command, false);
         }
+
+        void ClipTool::addBrushesToMap (const Model::EntityBrushesMap &addBrushes, bool suppressSelect) {
+            if (!addBrushes.empty()) {
+                Model::BrushList allBrushes;
+                Model::EntityBrushesMap::const_iterator it, end;
+                for (it = addBrushes.begin(), end = addBrushes.end(); it != end; ++it) {
+                    Model::Entity* entity = it->first;
+                    
+                    const Model::BrushList& entityBrushes = it->second;
+                    allBrushes.insert(allBrushes.end(), entityBrushes.begin(), entityBrushes.end());
+                    
+                    submitCommand(AddObjectsCommand::addBrushes(document(), entityBrushes));
+                    if (!entity->worldspawn())
+                        submitCommand(ReparentBrushesCommand::reparent(document(), entityBrushes, *entity));
+                }
+				
+				if (! suppressSelect)
+					submitCommand(ChangeEditStateCommand::select(document(), allBrushes));
+            }
+		}
         
         void ClipTool::performClip() {
             assert(active());
@@ -616,24 +647,10 @@ namespace TrenchBroom {
             
             const Model::BrushList removeBrushes = document().editStateManager().selectedBrushes();
 
-            beginCommandGroup(wxT("Clip"));
+			beginCommandGroup(wxT("Clip"));
             submitCommand(ChangeEditStateCommand::deselectAll(document()));
 
-            if (!addBrushes.empty()) {
-                Model::BrushList allBrushes;
-                Model::EntityBrushesMap::const_iterator it, end;
-                for (it = addBrushes.begin(), end = addBrushes.end(); it != end; ++it) {
-                    Model::Entity* entity = it->first;
-                    
-                    const Model::BrushList& entityBrushes = it->second;
-                    allBrushes.insert(allBrushes.end(), entityBrushes.begin(), entityBrushes.end());
-                    
-                    submitCommand(AddObjectsCommand::addBrushes(document(), entityBrushes));
-                    if (!entity->worldspawn())
-                        submitCommand(ReparentBrushesCommand::reparent(document(), entityBrushes, *entity));
-                }
-                submitCommand(ChangeEditStateCommand::select(document(), allBrushes));
-            }
+			addBrushesToMap(addBrushes);
 
             submitCommand(RemoveObjectsCommand::removeBrushes(document(), removeBrushes));
             endCommandGroup();
@@ -647,6 +664,61 @@ namespace TrenchBroom {
             
             Controller::Command* command = new Controller::DocumentCommand(Controller::Command::ClipToolChange, document());
             submitCommand(command, false);
-       }
+		}
+
+		void ClipTool::performProgrammaticClip (Controller::InputState &inputState, ClipSide mode, const Vec3f (&planePoints)[3]) {
+			// if (active())
+			//	handleDeactivate(inputState);
+			if (!active())
+				activate(inputState);
+
+			m_clipSide = mode;
+			m_numPoints = 3;
+			m_hitIndex = -1;
+			for (unsigned int i = 0;  i < m_numPoints;  ++i) {
+				m_points[i] = planePoints[i];
+			}
+			// view().viewOptions().setRenderSelection(false);
+			// allocateRenderResources();
+
+			m_frontBrushes.clear();
+			m_backBrushes.clear();
+
+			const Model::BrushList &selectedBrushes = document().editStateManager().selectedBrushes();
+			if (! selectedBrushes.empty()) {
+				Model::BrushList allFrontBrushes, allBackBrushes;
+				updateBrushesGivenValidPlane(selectedBrushes, planePoints, allFrontBrushes, allBackBrushes);
+				// m_frontBrushFigure->setBrushes(allFrontBrushes);
+				// m_backBrushFigure->setBrushes(allBackBrushes);
+
+				Model::EntityBrushesMap addBrushes;
+				switch (m_clipSide) {
+					case CMFront:
+						addBrushes = m_frontBrushes;
+						break;
+					case CMBack:
+						addBrushes = m_backBrushes;
+						break;
+					default:
+						addBrushes = mergeEntityBrushes(m_frontBrushes, m_backBrushes);
+						break;
+				}
+
+				const Model::BrushList removeBrushes = document().editStateManager().selectedBrushes();
+
+	            submitCommand(ChangeEditStateCommand::deselectAll(document()));
+
+				bool suppressSelect = false;
+				addBrushesToMap(addBrushes, suppressSelect);
+
+	            submitCommand(RemoveObjectsCommand::removeBrushes(document(), removeBrushes));
+			}
+
+            m_numPoints = 0;
+            m_hitIndex = -1;
+ 
+			// if (active())
+			//	deactivate(inputState);
+		}
     }
 }

@@ -25,7 +25,7 @@
 #include "Model/TextureTypes.h"
 #include "Utility/VecMath.h"
 #include "View/Animation.h"
-
+#include "Controller/InputController.h"  // for ClipView
 #include <wx/cmdproc.h>
 #include <wx/docview.h>
 
@@ -88,6 +88,10 @@ namespace TrenchBroom {
             void flipObjects(bool horizontally);
             void moveVertices(Direction direction, bool snapToGrid);
             void removeObjects(const wxString& actionName);
+			void findTouchingBrushes(const Model::Brush *selectionBrush, Model::BrushList &touchingBrushes);
+			void programmaticClipTouchingByPlane (Controller::ClipTool &clipTool, Model::Brush *selectionBrush,
+													/*Controller::ClipTool::ClipSide*/ int splitMode,
+													const Vec3f &p1, const Vec3f &p2, const Vec3f &p3);
             
             Vec3f centerCameraOnObjectsPosition(const Model::EntityList& entities, const Model::BrushList& brushes);
         public:
@@ -197,6 +201,8 @@ namespace TrenchBroom {
 
             void OnEditSnapVertices(wxCommandEvent& event);
             void OnEditToggleAxisRestriction(wxCommandEvent& event);
+
+            void OnEditClipBySelected(wxCommandEvent& event);
             
             void OnEditPrintFilePositions(wxCommandEvent& event);
 

@@ -78,6 +78,7 @@ namespace TrenchBroom {
         }
 
         wxDragResult MapGLCanvasDropTarget::OnDragOver(wxCoord x, wxCoord y, wxDragResult def) {
+            assert(CurrentDropSource != NULL);
             wxTextDataObject* dataObject = static_cast<wxTextDataObject*>(CurrentDropSource->GetDataObject());
             wxString text = dataObject->GetText();
             m_inputController.dragMove(text.ToStdString(), x, y);

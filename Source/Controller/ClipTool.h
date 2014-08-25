@@ -110,11 +110,14 @@ namespace TrenchBroom {
             Renderer::BrushFigure* m_backBrushFigure;
             
             Vec3f selectNormal(const Vec3f::List& normals1, const Vec3f::List& normals2) const;
+			void updateBrushesGivenValidPlane (const Model::BrushList &selectedBrushes, const Vec3f (&planePoints)[3],
+												Model::BrushList &allFrontBrushes, Model::BrushList &allBackBrushes);
             void updateBrushes();
             Vec3f::List getNormals(const Vec3f& hitPoint, const Model::Face& hitFace) const;
             bool isPointIdenticalWithExistingPoint(const Vec3f& point) const;
             bool isPointLinearlyDependent(const Vec3f& point) const;
         protected:
+			void allocateRenderResources();
             bool handleActivate(InputState& inputState);
             bool handleDeactivate(InputState& inputState);
             bool handleIsModal(InputState& inputState);
@@ -142,6 +145,9 @@ namespace TrenchBroom {
             void toggleClipSide();
             void deleteLastPoint();
             void performClip();
+
+			void addBrushesToMap (const Model::EntityBrushesMap &addBrushes, bool suppressSelect=false);
+			void performProgrammaticClip (Controller::InputState &inputState, ClipSide mode, const Vec3f (&planePoints)[3]);
         };
     }
 }

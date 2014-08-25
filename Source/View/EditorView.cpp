@@ -22,6 +22,7 @@
 #include "Controller/AddObjectsCommand.h"
 #include "Controller/CameraEvent.h"
 #include "Controller/ChangeEditStateCommand.h"
+#include "Controller/ClipTool.h"
 #include "Controller/Command.h"
 #include "Controller/ControllerUtils.h"
 #include "Controller/EntityPropertyCommand.h"
@@ -161,6 +162,8 @@ namespace TrenchBroom {
         EVT_MENU(CommandIds::Menu::EditCorrectVertices, EditorView::OnEditCorrectVertices)
 
         EVT_MENU(CommandIds::Menu::EditToggleAxisRestriction, EditorView::OnEditToggleAxisRestriction)
+
+        EVT_MENU(CommandIds::Menu::EditClipBySelected, EditorView::OnEditClipBySelected)
 
         EVT_MENU(CommandIds::Menu::EditPrintFilePositions, EditorView::OnEditPrintFilePositions)
 
@@ -1056,6 +1059,97 @@ namespace TrenchBroom {
             CommandProcessor::BeginGroup(mapDocument().GetCommandProcessor(), wxT("Select Touching"));
             submit(select);
             submit(remove);
+            CommandProcessor::EndGroup(mapDocument().GetCommandProcessor());
+        }
+
+		void EditorView::findTouchingBrushes (const Model::Brush *selectionBrush, Model::BrushList &touchingBrushes)
+		{
+			touchingBrushes.clear();
+            const Model::EntityList& allEntities = mapDocument().map().entities();
+            Model::EntityList::const_iterator entityIt, entityEnd;
+            for (entityIt = allEntities.begin(), entityEnd = allEntities.end(); entityIt != entityEnd; ++entityIt) {
+                Model::Entity& entity = **entityIt;
+                const Model::BrushList& entityBrushes = entity.brushes();
+                if (!entityBrushes.empty()) {
+                    Model::BrushList::const_iterator brushIt, brushEnd;
+                    for (brushIt = entityBrushes.begin(), brushEnd = entityBrushes.end(); brushIt != brushEnd; ++brushIt) {
+                        Model::Brush* brush = *brushIt;
+                        if (brush != selectionBrush && selectionBrush->intersectsBrush(*brush) && m_filter->brushSelectable(*brush))
+                            touchingBrushes.push_back(brush);
+                    }
+                }
+            }
+		}
+
+		void EditorView::programmaticClipTouchingByPlane (Controller::ClipTool &clipTool, Model::Brush *selectionBrush, int splitMode_,
+															const Vec3f &p1, const Vec3f &p2, const Vec3f &p3) {
+
+			Controller::ClipTool::ClipSide splitMode = static_cast<Controller::ClipTool::ClipSide>(splitMode_);
+
+			Controller::ChangeEditStateCommand *desel = Controller::ChangeEditStateCommand::deselect(mapDocument(), *selectionBrush);
+			submit(desel);
+
+            Model::BrushList selectBrushes;
+			findTouchingBrushes(selectionBrush, selectBrushes);
+
+			if (! selectBrushes.empty()) {
+				Model::EntityList selectEntities;  // not working with entities here
+				Controller::ChangeEditStateCommand *select = Controller::ChangeEditStateCommand::replace(mapDocument(), selectEntities, selectBrushes);
+				submit(select);
+
+				Controller::InputState &inputState = inputController().inputState();
+				Vec3f planePoints[3] = {p1, p2, p3};
+				clipTool.performProgrammaticClip(inputState, splitMode, planePoints);
+			}
+		}
+
+        void EditorView::OnEditClipBySelected(wxCommandEvent& event) {
+            Model::EditStateManager& editStateManager = mapDocument().editStateManager();
+            assert(editStateManager.selectionMode() == Model::EditStateManager::SMBrushes &&
+                   editStateManager.selectedBrushes().size() == 1);
+
+            Model::Brush *selectionBrush = editStateManager.selectedBrushes().front();
+            Model::BrushList selectBrushes;
+			findTouchingBrushes(selectionBrush, selectBrushes);
+
+            CommandProcessor::BeginGroup(mapDocument().GetCommandProcessor(), wxT("Clip By Selected"));
+
+            Controller::ChangeEditStateCommand* select;
+            if (selectBrushes.empty()) {
+                select = Controller::ChangeEditStateCommand::deselectAll(mapDocument());
+				submit(select);
+            } else {
+				BBoxf bb( selectionBrush->bounds() );  // make a copy of bbox, as selectionBrush will be deleted 
+
+				std::auto_ptr<Controller::ClipTool> clipToolPtr( inputController().newClipTool() );
+				Controller::ClipTool &clipTool = *clipToolPtr;
+
+				Controller::ClipTool::ClipSide splitMode = Controller::ClipTool::CMBoth;
+
+				programmaticClipTouchingByPlane(clipTool, selectionBrush, splitMode, bb.vertex(0), bb.vertex(2), bb.vertex(1));  // right face, normal=left
+				programmaticClipTouchingByPlane(clipTool, selectionBrush, splitMode, bb.vertex(7), bb.vertex(5), bb.vertex(6));  // left face, normal=right
+				programmaticClipTouchingByPlane(clipTool, selectionBrush, splitMode, bb.vertex(7), bb.vertex(3), bb.vertex(6));  // front face, normal=back
+				programmaticClipTouchingByPlane(clipTool, selectionBrush, splitMode, bb.vertex(1), bb.vertex(5), bb.vertex(0));  // back face, normal=front
+				programmaticClipTouchingByPlane(clipTool, selectionBrush, splitMode, bb.vertex(0), bb.vertex(4), bb.vertex(2));  // top face, normal=down
+				programmaticClipTouchingByPlane(clipTool, selectionBrush, splitMode, bb.vertex(7), bb.vertex(5), bb.vertex(3));  // bottom face, normal=up
+
+				Controller::InputState &inputState = inputController().inputState();
+				clipTool.deactivate(inputState);
+
+				findTouchingBrushes(selectionBrush, selectBrushes);
+
+				if (!selectBrushes.empty()) {
+					Model::EntityList selectEntities;  // not working with entities here
+					select = Controller::ChangeEditStateCommand::replace(mapDocument(), selectEntities, selectBrushes);
+				} else {
+					select = Controller::ChangeEditStateCommand::deselectAll(mapDocument());
+				}
+
+		        Controller::RemoveObjectsCommand *remove = Controller::RemoveObjectsCommand::removeBrush(mapDocument(), *selectionBrush);
+		        submit(select);
+		        submit(remove);
+			}
+
             CommandProcessor::EndGroup(mapDocument().GetCommandProcessor());
         }
 

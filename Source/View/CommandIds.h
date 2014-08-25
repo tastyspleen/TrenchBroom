@@ -126,6 +126,7 @@ namespace TrenchBroom {
                 static const int EditFaceActions                    = Lowest + 100;
                 static const int EditPrintFilePositions             = Lowest + 101;
                 static const int EditToggleAxisRestriction          = Lowest + 102;
+                static const int EditClipBySelected                 = Lowest + 103;
                 static const int Highest                            = Lowest + 199;
             }
             

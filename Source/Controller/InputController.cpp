@@ -125,7 +125,7 @@ namespace TrenchBroom {
         m_selectionGuideRenderer(NULL),
         m_selectedFilter(Model::SelectedFilter(m_documentViewHolder.view().filter())) {
             m_cameraTool = new CameraTool(m_documentViewHolder, *this);
-            m_clipTool = new ClipTool(m_documentViewHolder, *this);
+            m_clipTool = newClipTool();
             m_createBrushTool = new CreateBrushTool(m_documentViewHolder, *this);
             m_createEntityTool = new CreateEntityTool(m_documentViewHolder, *this);
             m_flyTool = new FlyTool(m_documentViewHolder, *this);
@@ -187,6 +187,10 @@ namespace TrenchBroom {
             delete m_selectionTool;
             m_selectionTool = NULL;
         }
+
+		ClipTool * InputController::newClipTool () const {
+			return new ClipTool(m_documentViewHolder, const_cast<InputController&>(*this));
+		}
 
         void InputController::modifierKeyDown(ModifierKeyState modifierKey) {
             if ((m_inputState.modifierKeys() & modifierKey) == 0) {
